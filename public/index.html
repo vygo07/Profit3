@@ -1,24 +1,86 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BingX PnL Tracker</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>BingX PnL Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f1f1f3;
+      padding: 20px;
+      color: #111;
+    }
+    h1 {
+      text-align: center;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      font-size: 1em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    .positive {
+      background-color: #d4fcd4;
+    }
+    .negative {
+      background-color: #fcd4d4;
+    }
+  </style>
 </head>
 <body>
-  <div id="app">
-    <h1>BingX PnL Tracker</h1>
-    <div class="api-form">
-      <input type="text" id="apiKey" placeholder="Zadej API klíč" />
-      <input type="password" id="apiSecret" placeholder="Zadej Secret" />
-      <button onclick="saveKeys()">Uložit</button>
-    </div>
-    <div id="summary"></div>
-    <canvas id="pnlChart"></canvas>
-    <table id="pnlTable"></table>
-  </div>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="script.js"></script>
+  <h1>BingX PnL Dashboard</h1>
+  <input type="text" id="apiKey" placeholder="API Key">
+  <input type="text" id="secretKey" placeholder="Secret Key">
+  <button onclick="loadData()">Načíst data</button>
+  <div id="stats"></div>
+  <table id="pnlTable"></table>
+  <script>
+    async function loadData() {
+      const apiKey = document.getElementById('apiKey').value;
+      const secretKey = document.getElementById('secretKey').value;
+      localStorage.setItem("apiKey", apiKey);
+      localStorage.setItem("secretKey", secretKey);
+
+      const res = await fetch(\`/api/pnl?apiKey=\${apiKey}&secretKey=\${secretKey}\`);
+      const data = await res.json();
+
+      let total = 0, totalFees = 0, wins = 0;
+      const table = document.getElementById("pnlTable");
+      table.innerHTML = "<tr><th>Datum</th><th>Zisk</th><th>Poplatek</th></tr>";
+
+      data.forEach(trade => {
+        const row = document.createElement("tr");
+        row.className = trade.pnl >= 0 ? "positive" : "negative";
+        row.innerHTML = \`<td>\${trade.date}</td><td>\${trade.pnl} USDT</td><td>\${trade.fee} USDT</td>\`;
+        table.appendChild(row);
+        total += trade.pnl;
+        totalFees += trade.fee;
+        if (trade.win) wins++;
+      });
+
+      const avg7 = data.slice(0, 7).reduce((sum, t) => sum + t.pnl, 0) / 7;
+      const winrate = Math.round((wins / data.length) * 100);
+      document.getElementById("stats").innerHTML = `
+        <p><strong>Měsíční zisk:</strong> ${total.toFixed(2)} USDT</p>
+        <p><strong>Průměrný denní zisk (7 dní):</strong> ${avg7.toFixed(2)} USDT</p>
+        <p><strong>Winrate:</strong> ${winrate}%</p>
+        <p><strong>Poplatky za měsíc:</strong> ${totalFees.toFixed(2)} USDT</p>
+      `;
+    }
+
+    // Automatické načtení jednou za minutu
+    setInterval(() => {
+      if (localStorage.getItem("apiKey")) loadData();
+    }, 60000);
+  </script>
 </body>
 </html>
