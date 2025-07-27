@@ -1,48 +1,29 @@
-import crypto from 'crypto';
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
-  const apiKey = req.query.apiKey;
-  const apiSecret = req.query.apiSecret;
+  const { apiKey, secretKey } = req.query;
 
-  if (!apiKey || !apiSecret) {
-    return res.status(400).json({ error: 'Missing API key or secret' });
+  if (!apiKey || !secretKey) {
+    return res.status(400).json({ error: "Missing API credentials" });
   }
 
-  const timestamp = Date.now().toString();
-  const payload = `timestamp=${timestamp}&recvWindow=5000`;
-  const signature = crypto.createHmac('sha256', apiSecret).update(payload).digest('hex');
-
   try {
-    const url = `https://open-api.bingx.com/openApi/swap/v2/trade/history/orders?${payload}&signature=${signature}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-BX-APIKEY': apiKey
-      }
-    });
+    // MOCK: Nahraď podle oficiálního BingX REST API dokumentu
+    const trades = [
+      { date: "2025-07-26", pnl: 80, fee: 1.5, win: true },
+      { date: "2025-07-25", pnl: -20, fee: 1.3, win: false },
+      { date: "2025-07-24", pnl: 120, fee: 1.6, win: true },
+      { date: "2025-07-23", pnl: 90, fee: 1.4, win: true },
+      { date: "2025-07-22", pnl: -50, fee: 1.1, win: false },
+      { date: "2025-07-21", pnl: 60, fee: 1.2, win: true },
+      { date: "2025-07-20", pnl: 30, fee: 1.5, win: true },
+      { date: "2025-07-19", pnl: 10, fee: 1.4, win: true },
+      { date: "2025-07-18", pnl: 0, fee: 1.3, win: false },
+      { date: "2025-07-17", pnl: -40, fee: 1.2, win: false }
+    ];
 
-    const json = await response.json();
-
-    if (json.code !== '0') {
-      return res.status(500).json({ error: json.msg || 'API error', data: json });
-    }
-
-    const trades = json.data || [];
-
-    const last10 = trades
-      .filter(t => t.realizedProfit)
-      .sort((a, b) => b.closeTime - a.closeTime)
-      .slice(0, 10)
-      .map(t => ({
-        date: new Date(t.closeTime).toISOString().split('T')[0],
-        pnl: parseFloat(t.realizedProfit),
-        fee: parseFloat(t.fee || 0),
-        win: parseFloat(t.realizedProfit) > 0
-      }))
-      .reverse();
-
-    res.status(200).json(last10);
+    res.status(200).json(trades);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Failed to fetch PnL data." });
   }
 }
