@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BingX PnL Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <h1>BingX PnL Tracker</h1>
+    <div class="api-form">
+      <input type="text" id="apiKey" placeholder="Zadej API klíč" />
+      <input type="password" id="apiSecret" placeholder="Zadej Secret" />
+      <button onclick="saveKeys()">Uložit</button>
+    </div>
+    <div id="summary"></div>
+    <canvas id="pnlChart"></canvas>
+    <table id="pnlTable"></table>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
